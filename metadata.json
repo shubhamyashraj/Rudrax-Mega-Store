@@ -1,0 +1,6 @@
+{
+  "name": "Rudrax Mega Store",
+  "description": "A premium, ready-to-scale Multi-category Ecommerce Platform with FIFO inventory tracking, multi-batch supply logs, and backoffice operational controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

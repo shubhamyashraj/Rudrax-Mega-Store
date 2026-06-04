@@ -1,11 +1,20 @@
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-  # Complete Ecommerce Platform Design
+# Run and deploy your AI Studio app
 
-  This is a code bundle for Complete Ecommerce Platform Design. The original project is available at https://www.figma.com/design/Jz6nEze60BP1G4dIRjy2oE/Complete-Ecommerce-Platform-Design.
+This contains everything you need to run your app locally.
 
-  ## Running the code
+View your app in AI Studio: https://ai.studio/apps/d8bbeae6-d2a7-4e50-be52-3968d3f92d1f
 
-  Run `npm i` to install the dependencies.
+## Run Locally
 
-  Run `npm run dev` to start the development server.
-  
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net default catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Primitives & Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    // User is Admin if the email matches Shubham's email (bootstrapped admin)
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'shubhamyashraj@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints (Anti-Update-Gap Helpers) ---
+
+    function isValidProduct(prod) {
+      return prod.id is string && prod.id.size() <= 128 &&
+             prod.name is string && prod.name.size() <= 150 &&
+             prod.brand is string && prod.brand.size() <= 100 &&
+             prod.category is string && prod.category.size() <= 50 &&
+             prod.variants is list && prod.variants.size() <= 50;
+    }
+
+    function isValidBatch(batch) {
+      return batch.id is string && batch.id.size() <= 128 &&
+             batch.productId is string && batch.productId.size() <= 128 &&
+             batch.variantId is string && batch.variantId.size() <= 128 &&
+             batch.purchasePrice is number && batch.purchasePrice >= 0 &&
+             batch.sellingPrice is number && batch.sellingPrice >= 0 &&
+             batch.quantity is int && batch.quantity >= 0 &&
+             batch.isActive is bool;
+    }
+
+    function isValidOrder(ord) {
+      return ord.id is string && ord.id.size() <= 128 &&
+             ord.customerEmail is string && ord.customerEmail.size() <= 150 &&
+             ord.customerName is string && ord.customerName.size() <= 150 &&
+             ord.items is list && ord.items.size() > 0 && ord.items.size() <= 100 &&
+             ord.total is number && ord.total >= 0 &&
+             ord.status is string && ord.createdAt is string;
+    }
+
+    function isValidReturnRequest(ret) {
+      return ret.id is string && ret.id.size() <= 128 &&
+             ret.orderId is string && ret.orderId.size() <= 128 &&
+             ret.productId is string && ret.productId.size() <= 128 &&
+             ret.variantId is string && ret.variantId.size() <= 128 &&
+             ret.quantity is int && ret.quantity > 0 &&
+             ret.refundAmount is number && ret.refundAmount >= 0 &&
+             ret.status is string;
+    }
+
+    function isValidCoupon(cpn) {
+      return cpn.code is string && cpn.code.size() <= 50 &&
+             cpn.discountPercent is number && cpn.discountPercent >= 0 && cpn.discountPercent <= 100 &&
+             cpn.isActive is bool;
+    }
+
+    // --- Collection Enforcement Matches ---
+
+    match /products/{productId} {
+      allow read: if true; // Everyone can read products
+      allow create, update: if isAdmin() && isValidProduct(incoming()) && isValidId(productId);
+      allow delete: if isAdmin() && isValidId(productId);
+    }
+
+    match /batches/{batchId} {
+      allow read: if true; // Everyone can read batches to see stock/active price
+      allow create, update: if isAdmin() && isValidBatch(incoming()) && isValidId(batchId);
+      allow delete: if isAdmin() && isValidId(batchId);
+    }
+
+    match /orders/{orderId} {
+      // Secure listing: Users can only query/list their own orders. Admin can do everything.
+      allow list: if isSignedIn() && (isAdmin() || resource.data.customerEmail == request.auth.token.email);
+      allow get: if isSignedIn() && (isAdmin() || resource.data.customerEmail == request.auth.token.email);
+      
+      // Order Creation: Must be signed in, email verified (optional check), can set email to their own, and validates order shape.
+      allow create: if isSignedIn() && 
+                    (incoming().customerEmail == request.auth.token.email || isAdmin()) && 
+                    isValidOrder(incoming()) && 
+                    isValidId(orderId);
+
+      // Order Update: Split into actions (Admin can do anything; Users CANNOT update except requesting returns which is verified)
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (
+          // User action: can set returnRequested flag or add return requested timeline (Tier 2 rules)
+          incoming().customerEmail == existing().customerEmail &&
+          incoming().id == existing().id &&
+          incoming().total == existing().total &&
+          incoming().items == existing().items &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['returnRequested', 'status', 'timeline'])
+        )
+      ) && isValidOrder(incoming()) && isValidId(orderId);
+
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    match /returns/{returnId} {
+      allow list, get: if isSignedIn() && (isAdmin() || resource.data.studentEmail == request.auth.token.email || resource.data.customerEmail == request.auth.token.email);
+      allow create: if isSignedIn() && isValidReturnRequest(incoming()) && isValidId(returnId);
+      allow update: if isAdmin() && isValidReturnRequest(incoming()) && isValidId(returnId);
+      allow delete: if isAdmin() && isValidId(returnId);
+    }
+
+    match /coupons/{couponId} {
+      allow read: if true; // Everyone can see coupons
+      allow create, update: if isAdmin() && isValidCoupon(incoming()) && isValidId(couponId);
+      allow delete: if isAdmin() && isValidId(couponId);
+    }
+
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

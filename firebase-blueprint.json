@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Product model with variants and metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "brand": { "type": "string" },
+        "category": { "type": "string" },
+        "subCategory": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "variants": { "type": "array" },
+        "seoKeywords": { "type": "string" },
+        "specifications": { "type": "object" }
+      },
+      "required": ["id", "name", "brand", "category", "variants"]
+    },
+    "Batch": {
+      "title": "Batch",
+      "description": "Inventory batch detailing quantities and dynamic pricing using chronos rules",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "variantId": { "type": "string" },
+        "purchasePrice": { "type": "number" },
+        "sellingPrice": { "type": "number" },
+        "quantity": { "type": "number" },
+        "initialQuantity": { "type": "number" },
+        "mfgDate": { "type": "string" },
+        "expiryDate": { "type": "string" },
+        "taxPercent": { "type": "number" },
+        "hsnCode": { "type": "string" },
+        "supplier": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "productId", "variantId", "purchasePrice", "sellingPrice", "quantity", "isActive"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order with shipping items, timelines, and status updates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "shippingAddress": { "type": "object" },
+        "deliveryOption": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "tax": { "type": "number" },
+        "shippingFee": { "type": "number" },
+        "discount": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string" },
+        "timeline": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "customerEmail", "customerName", "items", "total", "status", "createdAt"]
+    },
+    "ReturnRequest": {
+      "title": "ReturnRequest",
+      "description": "Customer return request representing item retrieval in inventory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "productId": { "type": "string" },
+        "variantId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "inventoryAction": { "type": "string" },
+        "refundAmount": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderId", "productId", "variantId", "quantity", "status", "createdAt"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Store campaigns and discount codes",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "discountPercent": { "type": "number" },
+        "minOrderValue": { "type": "number" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "expiryDate": { "type": "string" }
+      },
+      "required": ["code", "discountPercent", "isActive"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Products catalog documents"
+    },
+    "/batches/{batchId}": {
+      "schema": "Batch",
+      "description": "Dynamic stock inventory batches"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer completed transactions"
+    },
+    "/returns/{returnId}": {
+      "schema": "ReturnRequest",
+      "description": "Customer return requests"
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Coupon promotional campaigns"
+    }
+  }
+}
