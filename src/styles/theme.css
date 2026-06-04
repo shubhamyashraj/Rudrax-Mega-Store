@@ -3,42 +3,88 @@
 :root {
   --font-size: 16px;
   --background: #ffffff;
-  --foreground: #1a1a1a;
+  --foreground: oklch(0.145 0 0);
   --card: #ffffff;
-  --card-foreground: #1a1a1a;
-  --popover: #ffffff;
-  --popover-foreground: #1a1a1a;
-  --primary: #FF6B35;
-  --primary-foreground: #ffffff;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #1a1a1a;
-  --muted: #f5f5f5;
-  --muted-foreground: #666666;
-  --accent: #f0f0f0;
-  --accent-foreground: #1a1a1a;
-  --destructive: #dc2626;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #ff6b35;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.1);
   --input: transparent;
-  --input-background: #f8f8f8;
-  --switch-background: #d1d5db;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #FF6B35;
-  --chart-1: #FF6B35;
-  --chart-2: #4ECDC4;
-  --chart-3: #FFD93D;
-  --chart-4: #6C63FF;
-  --chart-5: #95E1D3;
-  --radius: 0.5rem;
-  --sidebar: #1a1a1a;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #FF6B35;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2a2a2a;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #FF6B35;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* E-commerce specific colors */
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+  --danger: #ef4444;
+  --danger-foreground: #ffffff;
+
+  /* Product colors */
+  --discount: #dc2626;
+  --price: #1f2937;
+  --sale-badge: #ff6b35;
+  --stock-low: #f59e0b;
+  --stock-out: #ef4444;
+  --stock-available: #10b981;
+
+  /* Rating */
+  --rating-star: #fbbf24;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Spacing system */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* Typography */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
 }
 
 .dark {
@@ -117,6 +163,23 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* E-commerce colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-discount: var(--discount);
+  --color-price: var(--price);
+  --color-sale-badge: var(--sale-badge);
+  --color-stock-low: var(--stock-low);
+  --color-stock-out: var(--stock-out);
+  --color-stock-available: var(--stock-available);
+  --color-rating-star: var(--rating-star);
 }
 
 @layer base {

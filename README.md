@@ -1,7 +1,7 @@
 
-  # Rudrax E-commerce Platform Design
+  # Complete Ecommerce Platform Design
 
-  This is a code bundle for Rudrax E-commerce Platform Design. The original project is available at https://www.figma.com/design/llk3u1OGChS5XYk0c1WmTv/Rudrax-E-commerce-Platform-Design.
+  This is a code bundle for Complete Ecommerce Platform Design. The original project is available at https://www.figma.com/design/Jz6nEze60BP1G4dIRjy2oE/Complete-Ecommerce-Platform-Design.
 
   ## Running the code
 
