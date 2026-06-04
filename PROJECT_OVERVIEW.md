@@ -1,4 +1,4 @@
-# Rudrax E-commerce Platform
+﻿# Rudrax E-commerce Platform
 
 A complete, production-ready e-commerce web application built with React, TypeScript, Tailwind CSS, and React Router.
 
