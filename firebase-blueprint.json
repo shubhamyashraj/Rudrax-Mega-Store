@@ -96,6 +96,38 @@
         "expiryDate": { "type": "string" }
       },
       "required": ["code", "discountPercent", "isActive"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role permission levels and loyalty points",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["Customer", "Admin", "SuperAdmin"] },
+        "loyaltyPoints": { "type": "number" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "name", "role", "loyaltyPoints"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Store environment-wide settings",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "supportPhone": { "type": "string" },
+        "defaultTaxRate": { "type": "number" },
+        "freeShippingThreshold": { "type": "number" },
+        "standardShippingFee": { "type": "number" },
+        "loyaltyPointsPerDollar": { "type": "number" }
+      },
+      "required": ["storeName", "contactEmail", "supportPhone"]
     }
   },
   "firestore": {
@@ -118,6 +150,14 @@
     "/coupons/{couponId}": {
       "schema": "Coupon",
       "description": "Coupon promotional campaigns"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Authenticated user custom profile records"
+    },
+    "/settings/{settingsId}": {
+      "schema": "SystemSettings",
+      "description": "Store configuration document"
     }
   }
 }

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useRudrax } from '../../app/StateContext';
 import { Product } from '../../models/types';
-import { Badge, Input, Button } from '../../components/ui/atoms';
+import { Badge, Input, Button, Barcode } from '../../components/ui/atoms';
 import { 
-  Plus, Trash2, Edit2, Upload, Sparkles, Layers, Info, Check, FileJson, AlertTriangle, Search, CheckCircle
+  Plus, Trash2, Edit2, Upload, Sparkles, Layers, Info, Check, FileJson, AlertTriangle, Search, CheckCircle, QrCode
 } from 'lucide-react';
 
 interface SpecField {
@@ -134,11 +134,12 @@ const BULK_PRESETS = [
 ];
 
 export function AdminProducts() {
-  const { products, batches, createProduct, editProduct, deleteProduct } = useRudrax();
+  const { products, batches, createProduct, editProduct, deleteProduct, clearAllProductsAndInventory, bootstrapCatalog } = useRudrax();
 
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
   const [showBulkUpload, setShowBulkUpload] = useState<boolean>(false);
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState<boolean>(false);
 
   // Filters & Search Scope
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -170,6 +171,22 @@ export function AdminProducts() {
 
   const [err, setErr] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  const [showQrModal, setShowQrModal] = useState<{ sku: string; barcode: string; name: string } | null>(null);
+
+  // Check if SKU exists globally in any OTHER product
+  const isSkuDuplicateGlobal = (skuToCheck: string, excludeProductId: string | null) => {
+    if (!skuToCheck || !skuToCheck.trim()) return false;
+    const targetSku = skuToCheck.trim().toLowerCase();
+    for (const prod of products) {
+      if (excludeProductId && prod.id === excludeProductId) continue;
+      for (const variant of prod.variants) {
+        if (variant.sku.trim().toLowerCase() === targetSku) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
 
   // Bulk Upload text state
   const [bulkJson, setBulkJson] = useState<string>(JSON.stringify(BULK_PRESETS[0].data, null, 2));
@@ -224,6 +241,31 @@ export function AdminProducts() {
     if (variantsList.length === 0) {
       setErr('Every product variant must have at least one weight/quantity pack format.');
       return;
+    }
+
+    // Validate SKU uniqueness
+    const skuSet = new Set<string>();
+    for (const v of variantsList) {
+      const trimmedSku = v.sku.trim();
+      const trimmedName = v.name.trim();
+      if (!trimmedName) {
+        setErr('Variant pack description cannot be empty.');
+        return;
+      }
+      if (!trimmedSku) {
+        setErr(`SKU for variant "${v.name}" cannot be empty.`);
+        return;
+      }
+      if (skuSet.has(trimmedSku.toLowerCase())) {
+        setErr(`Duplicate SKU "${trimmedSku}" detected in variants list.`);
+        return;
+      }
+      skuSet.add(trimmedSku.toLowerCase());
+
+      if (isSkuDuplicateGlobal(trimmedSku, editingProdId)) {
+        setErr(`SKU "${trimmedSku}" is already registered (must be globally unique across all products).`);
+        return;
+      }
     }
 
     const finalSpecifications: Record<string, string> = { ...templatedSpecs };
@@ -337,7 +379,22 @@ export function AdminProducts() {
     setSeoKeywords('');
     setTemplatedSpecs({});
     setCustomSpecs([]);
-    setVariantsList([{ name: 'Standard lot', sku: `RDX-GCR-${Math.floor(100 + Math.random() * 900)}`, barcode: '8900000001' }]);
+    
+    // Auto-fill first variant SKU with a globally unique RDX-GCR SKU code automatically!
+    const catCode = 'GCR';
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    let initialSku = `RDX-${catCode}-${rand}`;
+    let attempts = 0;
+    while (isSkuDuplicateGlobal(initialSku, null) && attempts < 50) {
+      initialSku = `RDX-${catCode}-${Math.floor(1000 + Math.random() * 9000)}`;
+      attempts++;
+    }
+
+    setVariantsList([{ 
+      name: 'Standard lot', 
+      sku: initialSku, 
+      barcode: String(Math.floor(890100000000 + Math.random() * 9000000000))
+    }]);
   };
 
   const addCustomAttr = () => {
@@ -352,15 +409,49 @@ export function AdminProducts() {
   };
 
   const addVariantRow = () => {
+    // Generate a beautiful, unique and deterministic SKU based on current category
+    const catCode = (category || 'GCR').substring(0, 3).toUpperCase();
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    let generatedSku = `RDX-${catCode}-${rand}`;
+    let attempts = 0;
+    while ((isSkuDuplicateGlobal(generatedSku, editingProdId) || variantsList.some(v => v.sku.toLowerCase() === generatedSku.toLowerCase())) && attempts < 50) {
+      generatedSku = `RDX-${catCode}-${Math.floor(1000 + Math.random() * 9000)}`;
+      attempts++;
+    }
+
     setVariantsList([...variantsList, { 
       name: '', 
-      sku: `RDX-VAR-${variantsList.length + 1}-${Math.floor(10 + Math.random() * 90)}`, 
-      barcode: `${8900000000 + variantsList.length + Math.floor(Math.random()*100)}` 
+      sku: generatedSku, 
+      barcode: String(Math.floor(890100000000 + Math.random() * 9000000000))
     }]);
   };
 
   const updateVariantRow = (idx: number, field: 'name' | 'sku' | 'barcode', value: string) => {
     const updated = [...variantsList];
+    
+    // Intelligent real-time auto-fill for product variant SKU on user entering variant pack name
+    if (field === 'name') {
+      const currentSku = updated[idx].sku;
+      const isDefaultGen = currentSku === '' || currentSku.startsWith('RDX-') && currentSku.split('-').length === 3 && !isNaN(Number(currentSku.split('-')[2]));
+      
+      if (isDefaultGen) {
+        const catCode = (category || 'GCR').substring(0, 3).toUpperCase();
+        const cleanVarName = value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+        const rand = Math.floor(100 + Math.random() * 900);
+        let filledSku = `RDX-${catCode}-${cleanVarName || 'VAR'}-${rand}`;
+        
+        let attempts = 0;
+        while ((isSkuDuplicateGlobal(filledSku, editingProdId) || updated.some((v, i) => i !== idx && v.sku.toLowerCase() === filledSku.toLowerCase())) && attempts < 50) {
+          filledSku = `RDX-${catCode}-${cleanVarName || 'VAR'}-${Math.floor(100 + Math.random() * 900)}`;
+          attempts++;
+        }
+        
+        updated[idx] = { ...updated[idx], name: value, sku: filledSku };
+        setVariantsList(updated);
+        return;
+      }
+    }
+
     updated[idx] = { ...updated[idx], [field]: value };
     setVariantsList(updated);
   };
@@ -448,6 +539,53 @@ export function AdminProducts() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {showClearConfirm ? (
+            <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 p-1 rounded-xl">
+              <span className="text-[10px] font-extrabold text-rose-700 px-2 uppercase font-mono">Wipe DB?</span>
+              <button
+                onClick={async () => {
+                  try {
+                    await clearAllProductsAndInventory();
+                    setShowClearConfirm(false);
+                    setSuccessMsg("All catalog products, inventories, and active coupons successfully cleared from Firestore!");
+                  } catch (e) {
+                    setErr("Failed to clear database catalog.");
+                  }
+                }}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all shadow-sm cursor-pointer"
+              >
+                Yes, Clear All
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    await bootstrapCatalog();
+                    setSuccessMsg("Pristine baseline catalogs, historic inventory batches and default discount coupons successfully bootstrapped to live Firestore!");
+                  } catch (e) {
+                    setErr("Database seeding failed.");
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Sparkles size={14} /> Seed Default Data
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Trash2 size={14} /> Clear All Products
+              </button>
+            </div>
+          )}
           <button
             onClick={() => { setShowBulkUpload(!showBulkUpload); setShowAddForm(false); }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
@@ -653,7 +791,7 @@ export function AdminProducts() {
           {/* VARIANTS AND DEEP SKUs */}
           <div className="border border-slate-200/60 p-5 rounded-3xl flex flex-col gap-3">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Retail Pack Variants & Barcodes</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Retail Pack Variants & QR Identifiers</h3>
               <button
                 type="button"
                 onClick={addVariantRow}
@@ -669,7 +807,7 @@ export function AdminProducts() {
                   <Input label="Variant Retail Pack Description" placeholder="e.g. 5kg Sack, White 1200mm" value={vr.name} onChange={v => updateVariantRow(idx, 'name', v)} />
                   <Input label="Product SKU (Company unique)" placeholder="e.g. RDX-FAN-WHT-1200" value={vr.sku} onChange={v => updateVariantRow(idx, 'sku', v)} />
                   <div className="flex gap-2 items-center w-full">
-                    <Input label="Universal Barcode upc" placeholder="89011122" value={vr.barcode} onChange={v => updateVariantRow(idx, 'barcode', v)} />
+                    <Input label="QR Code Identifier ID (Auto)" placeholder="89011122" value={vr.barcode} onChange={v => updateVariantRow(idx, 'barcode', v)} />
                     {variantsList.length > 1 && (
                       <button
                         type="button"
@@ -840,9 +978,17 @@ export function AdminProducts() {
                             <span className="truncate max-w-[110px] font-semibold">{v.name}</span>
                             <div className="flex items-center gap-1.5 font-bold">
                               <span className="text-[9px] text-slate-400">{v.sku}</span>
-                              <span className={`px-1 py-0.5 rounded ${vStock === 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                              <span className={`px-1.5 py-0.5 rounded ${vStock === 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                 {vStock} Left
                               </span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setShowQrModal({ sku: v.sku, barcode: v.barcode || '890000', name: `${p.name} (${v.name})` }); }}
+                                className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                                title="Show Admin Asset QR Code"
+                              >
+                                <QrCode size={11} />
+                              </button>
                             </div>
                           </div>
                         );
@@ -888,6 +1034,34 @@ export function AdminProducts() {
         )}
 
       </div>
+
+      {/* Admin exclusive QR Code Asset modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 bg-slate-900/45 backdrop-blur-xs flex items-center justify-center z-50 p-4 select-none animate-fadeIn">
+          <div className="bg-white rounded-3xl border border-slate-205 shadow-xl max-w-sm w-full p-6 relative flex flex-col items-center gap-4 animate-scaleUp">
+            <h3 className="text-sm font-black text-slate-900 font-display flex items-center gap-2">
+              <span className="text-rose-600">✦</span> Variant QR Asset Tag
+            </h3>
+            
+            <div className="text-center">
+              <p className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug">{showQrModal.name}</p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1">Internal digital tracking code for Rudrax inventory ledger.</p>
+            </div>
+            
+            <div className="py-2.5">
+              <Barcode sku={showQrModal.sku} code={showQrModal.barcode} />
+            </div>
+
+            <button
+              onClick={() => setShowQrModal(null)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer mt-1"
+            >
+              Close Asset Viewer
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

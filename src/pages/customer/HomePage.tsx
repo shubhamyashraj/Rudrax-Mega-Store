@@ -1,11 +1,16 @@
 import React from 'react';
 import { useRudrax } from '../../app/StateContext';
-import { ProductCard } from '../../components/customer/ProductCard';
+import { ProductCard } from '../../components/product/ProductCard';
 import { Button } from '../../components/ui/atoms';
-import { ShoppingBag, Sparkles, Gift, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Sparkles, Gift, ChevronRight, Heart, Eye } from 'lucide-react';
 
 export function HomePage() {
-  const { products, setSelectedCategory, setActivePage } = useRudrax();
+  const { products, setSelectedCategory, setActivePage, wishlist, recentlyViewed } = useRudrax();
+
+  const wishlistedProducts = products.filter(p => wishlist?.includes(p.id));
+  const recentlyViewedProducts = recentlyViewed
+    ?.map(id => products.find(p => p.id === id))
+    .filter((p): p is typeof products[0] => !!p);
 
   return (
     <div className="flex flex-col gap-10 select-none pb-12 animate-fadeIn">
@@ -175,6 +180,36 @@ export function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Conditional Wishlist Section */}
+      {wishlistedProducts.length > 0 && (
+        <section className="flex flex-col gap-5 pt-2 animate-fadeIn">
+          <h2 className="text-sm font-black font-display text-rose-700 uppercase tracking-wider flex items-center gap-2">
+            <span className="h-5 w-1 bg-rose-600 rounded-full" />
+            <Heart size={14} className="fill-rose-600" /> My Saved Wishlist ({wishlistedProducts.length})
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {wishlistedProducts.map((prod) => (
+              <ProductCard key={prod.id} product={prod} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Conditional Recently Viewed Section */}
+      {recentlyViewedProducts.length > 0 && (
+        <section className="flex flex-col gap-5 pt-2 animate-fadeIn">
+          <h2 className="text-sm font-black font-display text-slate-700 uppercase tracking-wider flex items-center gap-2">
+            <span className="h-5 w-1 bg-slate-600 rounded-full" />
+            <Eye size={14} className="text-slate-600" /> Recently Viewed Items
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {recentlyViewedProducts.map((prod) => (
+              <ProductCard key={prod.id} product={prod} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

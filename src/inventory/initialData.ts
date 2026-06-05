@@ -72,7 +72,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: "Daily Essentials",
     subCategory: "Dairy Products",
     description: "Pasteurized homogenized toning whole milk, delicious taste, zero preservatives. Sourced fresh daily.",
-    image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&q=80&w=600",
+    image: "/src/assets/images/regenerated_image_1780689036107.jpg",
     rating: 4.9,
     reviewsCount: 520,
     seoKeywords: "milk, amul milk, dairy, whole milk, pasteurized milk",

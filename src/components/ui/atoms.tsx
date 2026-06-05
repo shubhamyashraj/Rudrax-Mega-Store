@@ -139,25 +139,55 @@ interface BarcodeProps {
 }
 
 export function Barcode({ code, sku }: BarcodeProps) {
+  // Generate a neat, pseudo-random but deterministic 10x10 QR grid based on the hash of SKU/code
+  const hash = sku + code;
+  let codeSum = 0;
+  for (let i = 0; i < hash.length; i++) {
+    codeSum += hash.charCodeAt(i);
+  }
+  
+  const getPixel = (x: number, y: number) => {
+    // Top-left finder pattern (3x3 black with white inner)
+    if (x < 3 && y < 3) {
+      if (x === 1 && y === 1) return false;
+      return true;
+    }
+    // Top-right finder pattern
+    if (x > 6 && y < 3) {
+      const rx = x - 7;
+      if (rx === 1 && y === 1) return false;
+      return true;
+    }
+    // Bottom-left finder pattern
+    if (x < 3 && y > 6) {
+      const ry = y - 7;
+      if (x === 1 && ry === 1) return false;
+      return true;
+    }
+    // Pseudo-random pixel values elsewhere based on high-dispersion hash
+    const val = Math.sin(codeSum + (x * 17) + (y * 23)) * 10000;
+    return (val - Math.floor(val)) > 0.5;
+  };
+
+  const grid = Array.from({ length: 10 }, (_, y) =>
+    Array.from({ length: 10 }, (_, x) => getPixel(x, y))
+  );
+
   return (
-    <div className="flex flex-col items-center gap-1.5 p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-      <div className="flex items-center gap-0.5 h-10 px-2 bg-slate-50 border border-slate-100 rounded">
-        {/* Generate safe mock barcode bars */}
-        {sku.split('').map((char, index) => {
-          const width = (char.charCodeAt(0) % 3) + 1; // 1 to 3 width
-          const space = (char.charCodeAt(0) % 2) + 1; // 1 to 2 spacing
-          return (
+    <div className="flex flex-col items-center gap-1.5 p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+      <div className="grid grid-cols-10 gap-[1px] p-2 bg-slate-50 border border-slate-100 rounded-lg w-16 h-16">
+        {grid.map((row, y) =>
+          row.map((black, x) => (
             <div
-              key={index}
-              style={{ width: `${width}px`, marginRight: `${space}px` }}
-              className="h-8 bg-slate-900 last:mr-0"
+              key={`${x}-${y}`}
+              className={`w-1.2 h-1.2 rounded-[1px] ${black ? 'bg-slate-900' : 'bg-transparent'}`}
             />
-          );
-        })}
+          ))
+        )}
       </div>
-      <div className="flex flex-col items-center">
-        <span className="font-mono text-[9px] text-slate-500 font-semibold uppercase">{sku}</span>
-        <span className="font-mono text-[8px] text-teal-600">UPC: {code}</span>
+      <div className="flex flex-col items-center select-all">
+        <span className="font-mono text-[9px] text-slate-500 font-bold uppercase tracking-wider">{sku}</span>
+        <span className="font-mono text-[8px] text-rose-600 font-medium">ADMIN QR CODE</span>
       </div>
     </div>
   );

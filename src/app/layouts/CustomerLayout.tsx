@@ -1,5 +1,5 @@
 import React from 'react';
-import { CustomerHeader } from '../../components/customer/CustomerHeader';
+import { CustomerHeader } from '../../components/layout/CustomerHeader';
 import { Phone } from 'lucide-react';
 
 interface CustomerLayoutProps {

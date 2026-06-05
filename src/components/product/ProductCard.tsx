@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRudrax } from '../../app/StateContext';
 import { Product } from '../../models/types';
-import { Star, Eye, Percent, CheckCircle, PackageX } from 'lucide-react';
+import { Star, Eye, Percent, CheckCircle, PackageX, Heart } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -9,7 +9,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, batches, setActivePage, setActiveProductDetailId } = useRudrax();
+  const { addToCart, batches, setActivePage, setActiveProductDetailId, wishlist, toggleWishlist } = useRudrax();
   const [selectedVarId, setSelectedVarId] = useState<string>(product.variants[0]?.id || '');
 
   const selectedVariant = product.variants.find(v => v.id === selectedVarId) || product.variants[0];
@@ -35,11 +35,21 @@ export function ProductCard({ product }: ProductCardProps) {
     setActivePage('product-detail');
   };
 
+  const isWishlisted = wishlist?.includes(product.id) || false;
+
   return (
     <div
       onClick={handleCardClick}
       className="product-card group bg-white border border-slate-200/80 rounded-2xl p-3.5 flex flex-col justify-between hover:shadow-xl hover:border-teal-500/30 transition-all duration-300 relative cursor-pointer"
     >
+      {/* Wishlist Button over card top-right */}
+      <button
+        onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+        className="absolute top-3.5 right-3.5 bg-white/90 backdrop-blur-xs text-slate-400 hover:text-rose-600 p-1.5 rounded-full shadow-xs hover:scale-110 active:scale-95 transition-all z-10 border border-slate-100"
+      >
+        <Heart size={14} className={isWishlisted ? 'fill-rose-500 text-rose-500' : ''} />
+      </button>
+
       {/* Discount Tag overlay */}
       {discountPercent > 0 && aggregateStock > 0 && (
         <div className="absolute top-3.5 left-3.5 bg-rose-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm z-10 animate-pulse">

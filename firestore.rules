@@ -16,11 +16,22 @@ service cloud.firestore {
       return request.auth.token.email_verified == true;
     }
 
-    // User is Admin if the email matches Shubham's email (bootstrapped admin)
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    // User is Admin if their Firestore user document specifies Admin/SuperAdmin
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == 'shubhamyashraj@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        (getUserRole(request.auth.uid) == 'Admin' || getUserRole(request.auth.uid) == 'SuperAdmin')
+      );
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserRole(request.auth.uid) == 'SuperAdmin'
       );
     }
 
@@ -138,6 +149,27 @@ service cloud.firestore {
     match /settings/{settingsId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // Any signed-in user can read profiles (needed for dynamic SuperAdmin detection, directories, etc.)
+      allow read: if isSignedIn();
+
+      // Creating a profile is only allowed for the user themselves when registering.
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // Updating a profile:
+      // 1. Users can edit their own basic profile fields, but CANNOT self-escalate their role or set their own loyaltyPoints
+      // 2. SuperAdmin can edit any user's role (except changing other SuperAdmins or setting extra SuperAdmins)
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && 
+         incoming().role == existing().role && 
+         incoming().loyaltyPoints == existing().loyaltyPoints &&
+         incoming().email == existing().email) ||
+        (isSuperAdmin() && 
+         incoming().email == existing().email && 
+         incoming().uid == existing().uid)
+      );
     }
   }
 }

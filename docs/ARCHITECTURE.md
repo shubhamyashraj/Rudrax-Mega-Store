@@ -1,6 +1,6 @@
 # System Architecture: Rudrax Mega Store
 
-The system is engineered as an offline-first, client-supported web application operating on a React single-view setup that integrates serverless document storage (Google Cloud Firestore).
+The system is engineered as an offline-first, client-supported single-page web application (SPA) powered by React Router, integrating serverless document storage (Google Cloud Firestore).
 
 ## Key Layers
 1. **Presentation Layer (React & Vite)**:

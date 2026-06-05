@@ -1,8 +1,8 @@
 import { useRudrax } from '../../app/StateContext';
-import { LayoutDashboard, Box, Award, Receipt, Percent, Settings, Database } from 'lucide-react';
+import { LayoutDashboard, Box, Award, Receipt, Percent, Settings, Database, Users } from 'lucide-react';
 
 export function Sidebar() {
-  const { activeAdminTab, setActiveAdminTab, orders, returns, batches } = useRudrax();
+  const { activeAdminTab, setActiveAdminTab, orders, returns, batches, currentUser } = useRudrax();
 
   const pendingOrders = orders.filter(o => o.status === 'Pending').length;
   const pendingReturns = returns.filter(r => r.status === 'Pending').length;
@@ -16,6 +16,7 @@ export function Sidebar() {
     { id: 'inventory', label: 'FIFO Inventory', icon: Database, badge: lowStockBatches + expiredBatches, badgeColor: 'bg-rose-600' },
     { id: 'orders', label: 'Customer Orders', icon: Receipt, badge: pendingOrders, badgeColor: 'bg-teal-600' },
     { id: 'returns', label: 'Returned Logs', icon: Award, badge: pendingReturns, badgeColor: 'bg-amber-500 text-slate-950' },
+    { id: 'customers', label: 'Members Directory', icon: Users },
     { id: 'coupons', label: 'Offers & Coupons', icon: Percent },
     { id: 'settings', label: 'Store Settings', icon: Settings }
   ];
@@ -67,13 +68,17 @@ export function Sidebar() {
       {/* Footer Operator identity */}
       <div className="pt-5 border-t border-slate-800">
         <div className="flex items-center gap-2.5 bg-slate-950/40 p-3 rounded-xl border border-slate-800/80">
-          <div className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-[9px]">
-            OP
-          </div>
+          {currentUser && currentUser.photoURL ? (
+            <img src={currentUser.photoURL} alt={currentUser.name} className="h-6 w-6 rounded-full border border-slate-705 object-cover shadow-sm" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-[9px] uppercase">
+              {currentUser?.name ? currentUser.name[0] : 'OP'}
+            </div>
+          )}
           <div className="flex flex-col text-[10px]">
-            <span className="font-bold text-slate-300">Shubham Operator</span>
+            <span className="font-bold text-slate-305 truncate max-w-[130px]">{currentUser?.name || 'Administrator'}</span>
             <span className="text-emerald-500 font-semibold font-mono leading-none flex items-center gap-1 mt-0.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active ({currentUser?.role || 'Admin'})
             </span>
           </div>
         </div>

@@ -10,13 +10,23 @@ export function ProductDetailPage() {
     activeProductDetailId,
     setActiveProductDetailId,
     setActivePage,
-    addToCart
+    addToCart,
+    wishlist,
+    toggleWishlist,
+    addToRecentlyViewed
   } = useRudrax();
 
   const targetProduct = products.find(p => p.id === activeProductDetailId);
   
   // State for chosen variant
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
+
+  // Track product viewing history for recently viewed carousel
+  useEffect(() => {
+    if (targetProduct) {
+      addToRecentlyViewed(targetProduct.id);
+    }
+  }, [activeProductDetailId, targetProduct]);
 
   // Auto-set first variant on load or change
   useEffect(() => {
@@ -44,6 +54,8 @@ export function ProductDetailPage() {
   const activeBatchRow = variantBatches.find(b => b.isActive) || variantBatches[0];
   const aggregateStockQty = variantBatches.reduce((sum, b) => sum + b.quantity, 0);
 
+  const isWishlisted = wishlist?.includes(targetProduct.id) || false;
+
   return (
     <div className="py-4 select-none animate-fadeIn font-sans max-w-4xl mx-auto w-full">
       {/* Navigation link */}
@@ -57,13 +69,16 @@ export function ProductDetailPage() {
 
       <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         
-        {/* Pictures panel with grid thumbnails */}
+         {/* Pictures panel with grid thumbnails */}
         <div className="flex flex-col gap-4">
           <div className="h-80 w-full bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden flex items-center justify-center relative">
             <img src={targetProduct.image} alt={targetProduct.name} className="w-full h-full object-cover" />
-            <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-md border border-slate-100 p-2 rounded-xl text-slate-500 hover:text-rose-500 cursor-pointer shadow-xs transition-colors">
-              <Heart size={16} />
-            </span>
+            <button
+              onClick={() => toggleWishlist(targetProduct.id)}
+              className="absolute top-3 right-3 bg-white/90 backdrop-blur-md border border-slate-100 p-2 rounded-xl text-slate-500 hover:text-rose-500 cursor-pointer shadow-xs transition-colors"
+            >
+              <Heart size={16} className={isWishlisted ? 'fill-rose-500 text-rose-500' : ''} />
+            </button>
           </div>
           
           <div className="grid grid-cols-4 gap-2">
